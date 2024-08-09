@@ -10,28 +10,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Build and push Airflow image
+      - name: Deploy DAGs to Airflow
         run: |
-          docker build . -t my-airflow:latest
-          docker tag my-airflow:latest <your-dockerhub-username>/my-airflow:latest
-          docker push <your-dockerhub-username>/my-airflow:latest
-
-      - name: Deploy to Airflow
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            docker pull <your-dockerhub-username>/my-airflow:latest
-            docker-compose down
-            docker-compose up -d
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd /ruta/a/tu/volumen/dags
+            git pull origin main
+            docker-compose restart airflow-scheduler
           EOF
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
